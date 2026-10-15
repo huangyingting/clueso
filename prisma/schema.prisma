@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String       @id @default(cuid())
+  email          String       @unique
+  name           String
+  firstName      String?
+  lastName       String?
+  passwordHash   String?
+  pictureUrl     String?
+  role           String       @default("Admin")
+  status         String       @default("active")
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  guides         Guide[]
+  comments       Comment[]
+  chatThreads    ChatThread[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Organization {
+  id                  String                 @id @default(cuid())
+  name                String
+  domain              String                 @default("acme.io")
+  logoUrl             String?
+  plan                String                 @default("Enterprise")
+  region              String                 @default("usw1")
+  openDoor            Boolean                @default(true)
+  aiCreditsRemaining  Int                    @default(48200)
+  aiCreditsTotal      Int                    @default(50000)
+  seatsPurchased      Int                    @default(25)
+  mcpConnected        Boolean                @default(true)
+  brandKitJson        String                 @default("{}")
+  videoDefaultsJson   String                 @default("{}")
+  playerConfigJson    String                 @default("{}")
+  viewOnlyConfigJson  String                 @default("{}")
+  integrationsJson    String                 @default("{}")
+  providersJson       String                 @default("{}")
+  users               User[]
+  folders             Folder[]
+  guides              Guide[]
+  clueprints          Clueprint[]
+  pronunciations      PronunciationRule[]
+  transcriptionWords  TranscriptionKeyword[]
+  translationGlossary TranslationTerm[]
+  chatThreads         ChatThread[]
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+}
+
+model Folder {
+  id             String       @id @default(cuid())
+  name           String
+  description    String?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById    String
+  isDeleted      Boolean      @default(false)
+  guides         Guide[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Guide {
+  id             String         @id @default(cuid())
+  name           String
+  description    String?
+  status         String         @default("published")
+  activeFormat   String         @default("video")
+  languageId     String         @default("en")
+  duration       Float          @default(18.5)
+  aspectRatio    String         @default("16:9")
+  tagsJson       String         @default("[]")
+  guideDataJson  String
+  updateId       Int            @default(1)
+  isDeleted      Boolean        @default(false)
+  folderId       String?
+  folder         Folder?        @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  organizationId String
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById    String
+  createdBy      User           @relation(fields: [createdById], references: [id])
+  versions       GuideVersion[]
+  comments       Comment[]
+  exports        GuideExport[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model GuideVersion {
+  id            String   @id @default(cuid())
+  guideId       String
+  guide         Guide    @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  versionNumber Int
+  name          String
+  guideDataJson String
+  authorName    String
+  createdAt     DateTime @default(now())
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  guideId   String
+  guide     Guide    @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  timestamp Float    @default(0)
+  content   String
+  resolved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model GuideExport {
+  id          String   @id @default(cuid())
+  guideId     String
+  guide       Guide    @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  processType String   @default("export")
+  format      String   @default("mp4")
+  resolution  String   @default("1080p")
+  status      String   @default("completed")
+  downloadUrl String
+  createdAt   DateTime @default(now())
+}
+
+model Clueprint {
+  id             String       @id @default(cuid())
+  name           String
+  description    String
+  category       String       @default("Workspace")
+  aspectRatio    String       @default("16:9")
+  duration       Float        @default(15)
+  templateJson   String       @default("{}")
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+}
+
+model ChatThread {
+  id             String       @id @default(cuid())
+  title          String
+  model          String       @default("Opus 5.5")
+  guideId        String?
+  messagesJson   String       @default("[]")
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById    String
+  createdBy      User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model PronunciationRule {
+  id             String       @id @default(cuid())
+  word           String
+  phonetic       String
+  language       String       @default("English (US)")
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+}
+
+model TranscriptionKeyword {
+  id             String       @id @default(cuid())
+  keyword        String
+  category       String       @default("Brand")
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+}
+
+model TranslationTerm {
+  id             String       @id @default(cuid())
+  term           String
+  doNotTranslate Boolean      @default(true)
+  translations   String       @default("{}")
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+}
