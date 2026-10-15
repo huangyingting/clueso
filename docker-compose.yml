@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: clueso
+      POSTGRES_PASSWORD: clueso_prod_password
+      POSTGRES_DB: clueso_production
+    ports:
+      - "5432:5432"
+    volumes:
+      - clueso_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clueso -d clueso_production"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: "postgresql://clueso:clueso_prod_password@postgres:5432/clueso_production?schema=public"
+      ACCOUNT_ADMISSION_MODE: "invitation-only"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  clueso_pgdata:

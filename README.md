@@ -26,7 +26,20 @@ Default seeded demo credentials:
 - **Email**: `alex@acme.io`
 - **Password**: `CluesoDemo2026!`
 
-## 3. Production Deployment (PostgreSQL)
+## 3. Production Capabilities (Invite-Only Admission & Live Azure AI/TTS)
+
+- **Invitation-Only Account Admission (`ACCOUNT_ADMISSION_MODE="invitation-only"`)**:
+  - Cryptographic SHA-256 hashed one-time invitation links (`/invite/[token]`) with 7-day default expiry, rotation, revocation, and audit logging.
+  - Admin management console at `/admin/invitations` and `/home/settings/manage-users`.
+  - Public `/signup` and `/register` enforce invitation-only admission and block uninvited signups (`403 invitation_required`).
+- **Live Azure OpenAI (`gpt-6.1-sol`) Integration**:
+  - Powers Studio `AI Rewrite`, `Magic Translate`, `Clueso AI` Studio Copilot, `Enhance Article with AI`, prompt-to-guide creation, and multi-turn `Clueso Pilot` chats (`/chat/[id]`), with telemetry recorded in `AiInvocation`.
+- **Live Azure Speech Neural TTS (`japaneast`)**:
+  - Synthesizes real `audio-24khz-96kbitrate-mono-mp3` voiceovers across studio voices (`Brian`, `Sarah`, `Lily`, plus native multilingual dubbing voices), caches MP3 assets and word timings in `SpeechSynthesisAsset`, and renders interactive `<audio>` players in `/guide/[id]`.
+- **Health, Readiness & Containerization**:
+  - `GET /api/health` and `GET /api/ready` probes + `Dockerfile` and `docker-compose.yml`.
+
+## 4. Production Deployment (PostgreSQL)
 
 ```bash
 export DATABASE_URL="postgresql://user:password@host:5432/clueso?schema=public"

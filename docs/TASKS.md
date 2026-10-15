@@ -38,3 +38,10 @@
 - [x] **T7.1**: Run `npm run build` and verify all routes compile cleanly.
 - [x] **T7.2**: Run Playwright E2E test suite verifying Marketing, Auth, Workspace, Settings, Studio Editor, and Export pages.
 - [x] **T7.3**: Ensure `.cred` is git-ignored, commit all code, docs, and screenshots, and push to remote repository.
+
+## Epic 8: Production Hardening, Invite-Only Registration & Live Azure AI/TTS
+- [x] **T8.1**: Configure `.env` from `../ReadWise/.env` and extend SQLite & PostgreSQL Prisma schemas with `AccountInvitation`, `AiInvocation`, `SpeechSynthesisAsset`, and `AuditLog`.
+- [x] **T8.2**: Implement ReadWise-style invitation-only registration (`src/lib/account-admission/index.ts`, `/api/admin/invitations`, `/api/admin/invitations/[id]`, `/api/admin/invitations/[id]/rotate`, `/api/auth/invitation`, `/api/auth/register`, `/invite/[token]`, `/signup`, `/register`, `/admin/invitations`).
+- [x] **T8.3**: Implement live Azure OpenAI (`gpt-6.1-sol`) client (`src/lib/ai/index.ts`) and live Azure Speech Neural TTS (`japaneast`) synthesizer (`src/lib/speech/index.ts`), wired into `/api/guides/[id]/ai`, `/api/guides/[id]/speech`, `/api/guides`, `/api/chats`, `/api/chats/[id]`, and `<audio>` playback in `/guide/[id]`.
+- [x] **T8.4**: Add `/api/health`, `/api/ready`, `Dockerfile`, and `docker-compose.yml`, and verify end-to-end with Playwright (`scripts/verify_production_ai_and_invites.js`).
+

@@ -26,3 +26,12 @@ export async function getActiveUserAndOrg() {
 
   return user;
 }
+
+export async function getActiveWorkspaceContext() {
+  const user = await getActiveUserAndOrg();
+  return {
+    user,
+    org: user?.organization ?? null,
+  };
+}
+

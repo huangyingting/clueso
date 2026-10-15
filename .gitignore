@@ -20,6 +20,7 @@ build/
 *.db-journal
 prisma/*.db
 prisma/*.db-journal
+.media/
 
 # Testing / Playwright temp
 test-results/

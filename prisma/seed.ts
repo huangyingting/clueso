@@ -357,8 +357,8 @@ async function main() {
         bitbucket: { connected: false, repo: '' },
       }),
       providersJson: JSON.stringify({
-        aiProvider: 'Anthropic Claude Opus 5.5',
-        voiceProvider: 'ElevenLabs Turbo v2.5',
+        aiProvider: 'Azure OpenAI (gpt-6.1-sol)',
+        voiceProvider: 'Azure Speech Neural TTS (en-US-AndrewMultilingualNeural)',
       }),
     },
   });
@@ -669,6 +669,23 @@ async function main() {
       doNotTranslate: true,
       translations: JSON.stringify({ es: 'Clueso Studio', fr: 'Clueso Studio', ja: 'Clueso Studio' }),
       organizationId: org.id,
+    },
+  });
+
+  await prisma.accountInvitation.upsert({
+    where: { id: 'inv-seed-1' },
+    update: { status: 'PENDING' },
+    create: {
+      id: 'inv-seed-1',
+      email: 'elena@acme.io',
+      normalizedEmail: 'elena@acme.io',
+      activeForEmail: 'elena@acme.io',
+      role: 'Viewer',
+      tokenHash: 'a3f8d1e920b4c57e618902a1d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2',
+      status: 'PENDING',
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      organizationId: org.id,
+      invitedById: alex.id,
     },
   });
 

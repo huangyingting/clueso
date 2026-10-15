@@ -63,3 +63,27 @@ Model the `/guide/[id]` Studio Editor state after the reverse-engineered `GuideE
 ### Decision
 Provide a functional `/api/mcp` JSON-RPC endpoint and `/api/ai/copilot` route handler:
 - Allows the in-editor `Clueso AI` Co-Pilot (`Polish this video`, `Make new videos from it`, `Brand and reach`, freeform prompts with `Opus 5.5`) and `/chat/[id]` Pilot conversations to mutate guide scripts, add zoom/callout effects, generate articles, and translate guides into 6+ languages (`en`, `es`, `fr`, `de`, `ja`, `zh`).
+
+---
+
+## ADR-006: ReadWise-Style Invitation-Only Account Admission (`ACCOUNT_ADMISSION_MODE="invitation-only"`)
+### Decision
+Port the cryptographic invitation-only registration engine from `../ReadWise` (`src/lib/account-admission/index.ts`):
+- **Default Admission Mode**: `ACCOUNT_ADMISSION_MODE="invitation-only"`. Uninvited registration attempts to `POST /api/auth/register` are rejected with HTTP `403 invitation_required`, and `/signup` + `/register` render an invitation-only admission gate with a token acceptor.
+- **Cryptographic One-Time Tokens**: Raw 32-byte `base64url` tokens are generated via `crypto.randomBytes(32)` and only their SHA-256 `tokenHash` is stored in the `AccountInvitation` table (`PENDING`, `ACCEPTED`, `REVOKED`, `EXPIRED`) with a `unique` constraint on `activeForEmail` to prevent duplicate active invitations.
+- **Admin Invitation Lifecycle & Audit Logging**: Admins manage invitations in `/admin/invitations` and `/home/settings/manage-users` (`GET/POST /api/admin/invitations`, `POST /api/admin/invitations/[id]/rotate`, `DELETE /api/admin/invitations/[id]`), while invitees inspect and accept links at `/invite/[token]` (`GET /api/auth/invitation`, `POST /api/auth/register`), recording every state transition in `AuditLog`.
+
+---
+
+## ADR-007: Live Azure OpenAI (`gpt-6.1-sol`) & Azure Speech Neural TTS (`japaneast`)
+### Decision
+Integrate live cloud AI and Speech engines configured from `../ReadWise/.env` with Prisma ledger and asset caching:
+- **Azure OpenAI (`src/lib/ai/index.ts`)**: Connects to the `gpt-6.1-sol` deployment (`api-version=2025-04-01-preview`) using `max_completion_tokens` and structured JSON responses for Studio script rewriting (`guide_rewrite_script`), multi-language localization (`guide_translate`), Studio Copilot commands (`guide_studio_copilot`), SOP article enhancement (`guide_enhance_article`), AI prompt-to-guide creation (`guide_create_from_prompt`), and multi-turn Clueso Pilot chats (`clueso_pilot_chat_create` / `clueso_pilot_chat_turn`). Every call is logged in `AiInvocation`.
+- **Azure Speech Neural TTS (`src/lib/speech/index.ts`)**: Synthesizes real `audio-24khz-96kbitrate-mono-mp3` voiceovers via `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1` using SSML across studio and multilingual voices (`en-US-AndrewMultilingualNeural`, `en-US-AvaMultilingualNeural`, `en-GB-SoniaNeural`, `es-ES-ElviraNeural`, `fr-FR-DeniseNeural`, `de-DE-KatjaNeural`, `ja-JP-NanamiNeural`, `zh-CN-XiaoxiaoNeural`), caches audio & computed word-boundary timings in `SpeechSynthesisAsset` by SHA-256 `cacheKey`, and streams playable `<audio>` directly in `/guide/[id]`.
+
+---
+
+## ADR-008: Production Readiness Probes & Containerization
+### Decision
+Provide `/api/health` (liveness + provider configuration status), `/api/ready` (Prisma database connectivity + `Guide`, `User`, `AccountInvitation`, `AiInvocation`, and `SpeechSynthesisAsset` telemetry), a multi-stage Alpine `Dockerfile`, and `docker-compose.yml` for PostgreSQL 16 + Next.js production orchestration.
+

@@ -154,6 +154,7 @@ export default function StudioEditorPage() {
   const [animationTab, setAnimationTab] = useState<'Library' | 'Recents'>('Library');
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const studioAudioRef = useRef<HTMLAudioElement | null>(null);
 
   function notify(msg: string) {
     setToast(msg);
@@ -246,29 +247,38 @@ export default function StudioEditorPage() {
     const res = await fetch(`/api/guides/${guideId}/ai`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'rewrite', clipIndex: idx, tone: 'concise' }),
+      body: JSON.stringify({ action: 'rewrite', clipIndex: idx, tone: 'Concise & Polished' }),
     });
     const data = await res.json();
     if (data.clips) setClips(data.clips);
     setAiBusy(false);
-    notify('AI rewrote script & removed filler words');
+    notify(data.message || 'AI rewrote script & removed filler words');
   }
 
   async function handleGenerateSpeech(idx: number, voiceName?: string) {
     setAiBusy(true);
+    const selectedVoice = voiceName || clips[idx]?.voice || 'Brian (US Studio)';
     const res = await fetch(`/api/guides/${guideId}/ai`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'tts',
         clipIndex: idx,
-        voice: voiceName || clips[idx]?.voice || 'Brian',
+        voiceName: selectedVoice,
+        voice: selectedVoice,
       }),
     });
     const data = await res.json();
-    if (data.clips) setClips(data.clips);
+    if (data.clips) {
+      setClips(data.clips);
+      const targetAudio = data.clips[idx]?.audioDataUrl || data.clips[0]?.audioDataUrl;
+      if (targetAudio && studioAudioRef.current) {
+        studioAudioRef.current.src = targetAudio;
+        studioAudioRef.current.play().catch(() => null);
+      }
+    }
     setAiBusy(false);
-    notify(`Generated studio voiceover (${voiceName || clips[idx]?.voice || 'Brian'})`);
+    notify(data.message || `Generated studio voiceover (${selectedVoice})`);
   }
 
   async function handleMagicTranslate() {
@@ -283,7 +293,7 @@ export default function StudioEditorPage() {
     if (data.articleSteps) setArticleSteps(data.articleSteps);
     setAiBusy(false);
     setShowTranslateModal(false);
-    notify(`Translated video & article into ${selectedTranslateLang}`);
+    notify(data.message || `Translated video & article into ${selectedTranslateLang}`);
   }
 
   async function handleSendCopilot(promptText?: string) {
@@ -710,6 +720,20 @@ export default function StudioEditorPage() {
                           onBlur={() => saveGuideState({ clips }, 'Updated clip script')}
                           className="mt-2 w-full rounded-lg border border-slate-700/70 bg-slate-950/70 p-2 text-xs leading-relaxed text-slate-100 focus:border-[#e038b5] focus:outline-none"
                         />
+
+                        {clip.audioDataUrl && (
+                          <div className="mt-2 rounded-lg border border-pink-500/30 bg-slate-950/80 px-2.5 py-1.5">
+                            <div className="mb-1 flex items-center justify-between text-[10px] font-semibold text-pink-300">
+                              <span>Azure Neural Voiceover Ready</span>
+                              <span>{clip.duration}s MP3</span>
+                            </div>
+                            <audio
+                              controls
+                              src={clip.audioDataUrl}
+                              className="h-7 w-full"
+                            />
+                          </div>
+                        )}
                       </div>
                     ))}
 
@@ -1690,6 +1714,8 @@ export default function StudioEditorPage() {
           </div>
         </div>
       )}
+
+      <audio ref={studioAudioRef} className="hidden" />
     </div>
   );
 }

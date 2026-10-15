@@ -324,36 +324,56 @@ export default function WorkspaceSettingsPage() {
                     Users ({ws?.organization?.users?.length || 4})
                   </h2>
                   <p className="text-xs text-slate-500">
-                    Manage your team members and their permissions.
+                    Manage your team members and invitation-only admission links.
                   </p>
                 </div>
 
-                <form
-                  onSubmit={e => {
-                    e.preventDefault();
-                    if (!inviteEmail.trim()) return;
-                    savePatch(
-                      { action: 'invite-user', email: inviteEmail, role: 'Editor' },
-                      `Invited ${inviteEmail}`
-                    );
-                    setInviteEmail('');
-                  }}
-                  className="flex gap-2"
-                >
-                  <input
-                    type="email"
-                    value={inviteEmail}
-                    onChange={e => setInviteEmail(e.target.value)}
-                    placeholder="teammate@acme.io"
-                    className="rounded-xl border border-slate-300 px-3 py-1.5 text-xs"
-                  />
-                  <button
-                    type="submit"
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-white"
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link
+                    href="/admin/invitations"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-pink-200 bg-pink-50 px-3 py-1.5 text-xs font-semibold text-[#e038b5] hover:bg-pink-100"
                   >
-                    <UserPlus className="h-3.5 w-3.5" /> Invite users
-                  </button>
-                </form>
+                    Manage Invite Links →
+                  </Link>
+                  <form
+                    onSubmit={async e => {
+                      e.preventDefault();
+                      if (!inviteEmail.trim()) return;
+                      const target = inviteEmail.trim();
+                      setInviteEmail('');
+                      await savePatch(
+                        { action: 'invite-user', email: target, role: 'Editor' },
+                        `Invited ${target}`
+                      );
+                      const invRes = await fetch('/api/admin/invitations', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: target, role: 'Editor' }),
+                      }).catch(() => null);
+                      if (invRes?.ok) {
+                        const invData = await invRes.json();
+                        if (invData.acceptUrl) {
+                          notify(`Invite link ready: ${invData.acceptUrl}`);
+                        }
+                      }
+                    }}
+                    className="flex gap-2"
+                  >
+                    <input
+                      type="email"
+                      value={inviteEmail}
+                      onChange={e => setInviteEmail(e.target.value)}
+                      placeholder="teammate@acme.io"
+                      className="rounded-xl border border-slate-300 px-3 py-1.5 text-xs"
+                    />
+                    <button
+                      type="submit"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-white"
+                    >
+                      <UserPlus className="h-3.5 w-3.5" /> Invite users
+                    </button>
+                  </form>
+                </div>
               </div>
 
               <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">

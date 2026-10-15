@@ -8,22 +8,25 @@ datasource db {
 }
 
 model User {
-  id             String       @id @default(cuid())
-  email          String       @unique
-  name           String
-  firstName      String?
-  lastName       String?
-  passwordHash   String?
-  pictureUrl     String?
-  role           String       @default("Admin")
-  status         String       @default("active")
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  guides         Guide[]
-  comments       Comment[]
-  chatThreads    ChatThread[]
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id                        String              @id @default(cuid())
+  email                     String              @unique
+  name                      String
+  firstName                 String?
+  lastName                  String?
+  passwordHash              String?
+  pictureUrl                String?
+  role                      String              @default("Admin")
+  status                    String              @default("active")
+  emailVerified             DateTime?
+  organizationId            String
+  organization              Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  guides                    Guide[]
+  comments                  Comment[]
+  chatThreads               ChatThread[]
+  accountInvitationsSent     AccountInvitation[] @relation("AccountInvitationInviter")
+  accountInvitationsAccepted AccountInvitation[] @relation("AccountInvitationAcceptor")
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
 }
 
 model Organization {
@@ -52,6 +55,9 @@ model Organization {
   transcriptionWords  TranscriptionKeyword[]
   translationGlossary TranslationTerm[]
   chatThreads         ChatThread[]
+  invitations         AccountInvitation[]
+  aiInvocations       AiInvocation[]
+  auditLogs           AuditLog[]
   createdAt           DateTime               @default(now())
   updatedAt           DateTime               @updatedAt
 }
@@ -184,4 +190,85 @@ model TranslationTerm {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdAt      DateTime     @default(now())
+}
+
+model AccountInvitation {
+  id              String       @id @default(cuid())
+  email           String
+  normalizedEmail String
+  activeForEmail  String?      @unique
+  tokenHash       String?      @unique
+  status          String       @default("PENDING")
+  role            String       @default("Editor")
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedById     String?
+  invitedBy       User?        @relation("AccountInvitationInviter", fields: [invitedById], references: [id], onDelete: SetNull)
+  acceptedById    String?
+  acceptedBy      User?        @relation("AccountInvitationAcceptor", fields: [acceptedById], references: [id], onDelete: SetNull)
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([status, expiresAt])
+  @@index([normalizedEmail, createdAt])
+  @@index([organizationId])
+}
+
+model AiInvocation {
+  id               String       @id @default(cuid())
+  feature          String
+  provider         String       @default("azure-openai")
+  model            String       @default("gpt-6.1-sol")
+  status           String       @default("ok")
+  promptTokens     Int          @default(0)
+  completionTokens Int          @default(0)
+  totalTokens      Int          @default(0)
+  durationMs       Int          @default(0)
+  estimatedCostUsd Float        @default(0)
+  userId           String?
+  guideId          String?
+  organizationId   String
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt        DateTime     @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([feature, createdAt])
+}
+
+model SpeechSynthesisAsset {
+  id          String   @id @default(cuid())
+  cacheKey    String   @unique
+  guideId     String?
+  clipId      String?
+  voiceName   String
+  language    String   @default("en-US")
+  text        String
+  mimeType    String   @default("audio/mpeg")
+  audioBase64 String
+  wordsJson   String   @default("[]")
+  durationMs  Int      @default(0)
+  provider    String   @default("azure")
+  createdAt   DateTime @default(now())
+
+  @@index([guideId])
+}
+
+model AuditLog {
+  id             String       @id @default(cuid())
+  action         String
+  actorId        String?
+  actorEmail     String?
+  actorRole      String?
+  targetType     String
+  targetId       String?
+  metadataJson   String       @default("{}")
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([action, createdAt])
 }
