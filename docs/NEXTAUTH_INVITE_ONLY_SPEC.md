@@ -257,3 +257,21 @@ And the same 6 REST endpoints + 3 UI routes + 1 CLI tool:
 - `/admin/invitations` — Admin Invitation Console UI
 - `/invite/[token]` — One-time Invitation Acceptance UI
 - `scripts/bootstrap-admin.ts` (`npm run bootstrap:admin`) — Stdin-safe CLI bootstrap tool
+
+---
+
+## 6. Cross-Repository Rollout Matrix (`/home/azadmin`)
+
+Allrepositories under `/home/azadmin` using the `AccountInvitation` + `NextAuth` mechanism have been aligned to this specification:
+
+| Repository | `src/lib/account-admission/*` | NextAuth `signIn` + Credential Gate | Bootstrap Admin (`/admin/bootstrap` UI + `/api/auth/bootstrap` + `npm run bootstrap:admin`) | Invitation Console (`/admin/invitations` + `/invite/[token]`) |
+|---|---|---|---|---|
+| **`/home/azadmin/clueso`** | Aligned (`errors`, `policy`, `tokens`, `passwords`, `bootstrap`, `invitations`, `registration`, `social`, `index`) | Aligned (`authorizeSocialSignIn` + `PasswordCredential`) | Aligned (`/admin/bootstrap`, `/api/auth/bootstrap`, `scripts/bootstrap-admin.ts`) | Aligned (`/admin/invitations`, `/invite/[token]`) |
+| **`/home/azadmin/ReadWise`** | Aligned (`src/lib/account-admission/*` + `src/lib/auth/bootstrap.ts`) | Aligned (`authorizeSocialSignIn` + `PasswordCredential`) | Aligned (`/admin/bootstrap`, `/api/auth/bootstrap`, `scripts/bootstrap-admin.ts`) | Aligned (`/admin/invitations`, `/invite/[token]`) |
+| **`/home/azadmin/Arcade`** | Aligned (`errors`, `policy`, `tokens`, `passwords`, `bootstrap`, `invitations`, `registration`, `credentials`, `social`, `index`) | Aligned (`authorizeSocialSignIn` + `PasswordCredential` in `src/lib/auth.ts`) | Aligned (`/admin/bootstrap`, `/api/auth/bootstrap`, `scripts/bootstrap-admin.ts`) | Aligned (`/admin/invitations`, `/invite/[token]`) |
+| **`/home/azadmin/readwise.io`** | Aligned (`src/lib/account-admission/index.ts` + `src/lib/invitations.ts`) | Aligned (`validateAndClaimInvitation` + `PasswordCredential`) | Aligned (`/admin/bootstrap`, `/api/auth/bootstrap`, `scripts/bootstrap-admin.ts`) | Aligned (`/admin/invitations`, `/invite/[token]`) |
+| **`/home/azadmin/HelloInterview`** | Aligned (`server/account-admission/*` + `server/auth/admission.ts`) | Aligned (`admitSocialIdentity`) | Aligned (`scripts/bootstrap-admin.ts`, `/api/bootstrap`) | Aligned (`account_invitations`) |
+| **`/home/azadmin/UniLink`** | Aligned (`lib/auth/account-admission.ts` + `lib/auth/admin-bootstrap.ts`) | Aligned (`authorizeAccountSignIn` + `createAdmittedUser`) | Aligned (`createUserWithAdminBootstrap`) | Aligned (`ClosedTestInvitation`) |
+| **`/home/azadmin/Visdom`** | Aligned (`lib/invite.ts`, `lib/signup.ts`, `lib/pending-signup.ts`) | Aligned (`PendingSignup` OAuth gate + `microsoftEmailTrusted`) | Aligned (Seeded/Admin InviteCode authority) | Aligned (`/finish-signup`) |
+| **`/home/azadmin/TextIQ`** | Aligned (`src/lib/invite-access.ts`, `src/lib/workspace/invite-service.ts`) | Aligned (`evaluateInviteAccess`) | Aligned (Workspace Owner/Admin authority) | Aligned (`/app/join/[token]`) |
+
