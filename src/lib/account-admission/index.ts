@@ -25,11 +25,8 @@ export {
 } from './invitations';
 export { registerWithInvitation } from './registration';
 export { authorizeSocialSignIn } from './social';
-export {
-  type BootstrapStatusView,
-  bootstrapAdmin,
-  ensureEnvBootstrapAdmin,
-  getBootstrapStatus,
-} from './bootstrap';
+export { bootstrapAdmin } from './bootstrap';
+
+
 
 

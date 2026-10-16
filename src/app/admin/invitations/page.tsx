@@ -147,20 +147,12 @@ export default function AdminInvitationsPage() {
               Generate one-time SHA-256 hashed invitation links for new workspace members. Invitations expire after 7 days unless customized.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/admin/bootstrap"
-              className="rounded-xl border border-pink-200 bg-pink-50/70 px-4 py-2 text-xs font-semibold text-[#e038b5] hover:bg-pink-100"
-            >
-              Bootstrap Admin
-            </Link>
-            <Link
-              href="/home/settings/manage-users"
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              Back to Workspace Users
-            </Link>
-          </div>
+          <Link
+            href="/home/settings/manage-users"
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Back to Workspace Users
+          </Link>
         </div>
 
         {/* Create Invitation Card */}

@@ -122,11 +122,7 @@ export default function SignupPage() {
             <div className="rounded-xl border border-slate-100 bg-slate-50 p-3.5 text-[11px] text-slate-600">
               <p className="font-semibold text-slate-800">Workspace Administrator?</p>
               <p className="mt-0.5">
-                First-time deployment?{' '}
-                <Link href="/admin/bootstrap" className="font-semibold text-[#e038b5] underline">
-                  Bootstrap Admin Account
-                </Link>
-                , or sign in and generate one-time invitation links under{' '}
+                Sign in with your administrator account and generate one-time invitation links under{' '}
                 <Link href="/admin/invitations" className="font-semibold text-[#e038b5] underline">
                   Admin Invitations
                 </Link>{' '}

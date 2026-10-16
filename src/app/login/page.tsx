@@ -148,10 +148,6 @@ export default function LoginPage() {
           <Link href="/signup" className="font-semibold text-[#e038b5] hover:underline">
             Sign up
           </Link>
-          {' · '}
-          <Link href="/admin/bootstrap" className="font-semibold text-slate-700 hover:underline">
-            Bootstrap Admin
-          </Link>
         </p>
       </div>
     </div>
