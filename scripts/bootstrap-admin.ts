@@ -1,0 +1,88 @@
+import { readFileSync } from 'node:fs';
+import { bootstrapAdmin } from '../src/lib/account-admission/bootstrap';
+
+const HELP = `Usage: npm run bootstrap:admin -- --email <email> [--password-stdin | --password <pw>] [--name <name>]
+
+Creates or promotes a Clueso administrator account so it can sign in and send
+one-time invitations via /admin/invitations.
+
+Options:
+  --email <email>       Administrator email address (or BOOTSTRAP_ADMIN_EMAIL)
+  --name <name>         Optional display name (or BOOTSTRAP_ADMIN_NAME)
+  --password-stdin      Read the password from standard input
+  --password <pw>       Provide password directly (or BOOTSTRAP_ADMIN_PASSWORD)
+  --help, -h            Show this help
+`;
+
+function parseArgs(argv: string[]) {
+  let email = process.env.BOOTSTRAP_ADMIN_EMAIL || '';
+  let name = process.env.BOOTSTRAP_ADMIN_NAME || '';
+  let password = process.env.BOOTSTRAP_ADMIN_PASSWORD || '';
+  let passwordStdin = false;
+  let help = false;
+
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === '--help' || arg === '-h') {
+      help = true;
+    } else if (arg === '--email' && argv[i + 1]) {
+      email = argv[++i];
+    } else if (arg.startsWith('--email=')) {
+      email = arg.slice('--email='.length);
+    } else if (arg === '--name' && argv[i + 1]) {
+      name = argv[++i];
+    } else if (arg.startsWith('--name=')) {
+      name = arg.slice('--name='.length);
+    } else if (arg === '--password' && argv[i + 1]) {
+      password = argv[++i];
+    } else if (arg.startsWith('--password=')) {
+      password = arg.slice('--password='.length);
+    } else if (arg === '--password-stdin') {
+      passwordStdin = true;
+    }
+  }
+
+  return { email, name, password, passwordStdin, help };
+}
+
+async function main() {
+  const args = parseArgs(process.argv.slice(2));
+  if (args.help) {
+    console.log(HELP.trimEnd());
+    return;
+  }
+
+  const password = args.passwordStdin
+    ? readFileSync(0, 'utf8').replace(/\r?\n$/, '')
+    : args.password;
+
+  if (!args.email || !password) {
+    console.error(
+      'Both --email <email> and a password (--password-stdin or --password) are required.'
+    );
+    process.exit(2);
+  }
+
+  const result = await bootstrapAdmin({
+    email: args.email,
+    password,
+    name: args.name || null,
+    allowExistingAdmin: true,
+  });
+
+  console.log(
+    JSON.stringify({
+      ok: true,
+      created: result.created,
+      userId: result.user.id,
+      email: result.user.email,
+      role: result.user.role,
+      organizationId: result.organization.id,
+    })
+  );
+}
+
+main().catch((err) => {
+  console.error(err instanceof Error ? err.message : String(err));
+  process.exit(1);
+});
