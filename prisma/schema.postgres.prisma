@@ -18,8 +18,12 @@ model User {
   role                      String              @default("Admin")
   status                    String              @default("active")
   emailVerified             DateTime?
+  sessionVersion            Int                 @default(1)
   organizationId            String
   organization              Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  accounts                  Account[]
+  sessions                  Session[]
+  passwordCredential        PasswordCredential?
   guides                    Guide[]
   comments                  Comment[]
   chatThreads               ChatThread[]
@@ -27,6 +31,59 @@ model User {
   accountInvitationsAccepted AccountInvitation[] @relation("AccountInvitationAcceptor")
   createdAt                 DateTime            @default(now())
   updatedAt                 DateTime            @updatedAt
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model PasswordCredential {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  passwordHash      String
+  passwordChangedAt DateTime  @default(now())
+  resetTokenHash    String?   @unique
+  resetExpiresAt    DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Organization {
@@ -209,12 +266,30 @@ model AccountInvitation {
   expiresAt       DateTime
   acceptedAt      DateTime?
   revokedAt       DateTime?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  emails          AccountEmailOutbox[]
 
   @@index([status, expiresAt])
   @@index([normalizedEmail, createdAt])
   @@index([organizationId])
+}
+
+model AccountEmailOutbox {
+  id            String             @id @default(cuid())
+  payload       String
+  status        String             @default("pending")
+  claimToken    String?
+  lastAttemptAt DateTime?
+  lastError     String?
+  sentAt        DateTime?
+  expiresAt     DateTime
+  createdAt     DateTime           @default(now())
+  invitationId  String?
+  invitation    AccountInvitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([invitationId])
 }
 
 model AiInvocation {

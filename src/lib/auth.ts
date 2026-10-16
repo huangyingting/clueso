@@ -1,8 +1,12 @@
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
-import bcrypt from 'bcryptjs';
 import { prisma } from './prisma';
+import {
+  authorizeSocialSignIn,
+  normalizeAccountEmail,
+  verifyPassword,
+} from './account-admission';
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -25,7 +29,7 @@ export const authOptions: NextAuthOptions = {
             where: { email: 'alex@acme.io' },
             include: { organization: true },
           });
-          if (ssoUser) {
+          if (ssoUser && ssoUser.status === 'active') {
             return {
               id: ssoUser.id,
               email: ssoUser.email,
@@ -37,19 +41,24 @@ export const authOptions: NextAuthOptions = {
           }
         }
 
-        const email = credentials?.email?.trim().toLowerCase() || 'alex@acme.io';
+        const email = normalizeAccountEmail(credentials?.email || 'alex@acme.io');
         const user = await prisma.user.findUnique({
           where: { email },
-          include: { organization: true },
+          include: {
+            organization: true,
+            passwordCredential: true,
+          },
         });
 
-        if (!user) {
+        if (!user || user.status !== 'active') {
           return null;
         }
 
-        // Allow demo login or password verification
-        if (credentials?.password && credentials.password !== 'demo' && user.passwordHash) {
-          const valid = await bcrypt.compare(credentials.password, user.passwordHash);
+        const storedHash =
+          user.passwordCredential?.passwordHash || user.passwordHash || null;
+
+        if (credentials?.password && credentials.password !== 'demo' && storedHash) {
+          const valid = await verifyPassword(credentials.password, storedHash);
           if (!valid && credentials.password !== 'clueso123') {
             return null;
           }
@@ -71,6 +80,27 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    async signIn({ user, account, profile }) {
+      if (!account || account.provider === 'credentials') {
+        return true;
+      }
+
+      return authorizeSocialSignIn({
+        provider: account.provider,
+        providerAccountId: account.providerAccountId,
+        type: account.type,
+        accessToken: account.access_token,
+        refreshToken: account.refresh_token,
+        expiresAt: account.expires_at,
+        tokenType: account.token_type,
+        scope: account.scope,
+        idToken: account.id_token,
+        sessionState: account.session_state,
+        profile: profile as Record<string, unknown> | undefined,
+        userName: user?.name,
+        userImage: user?.image,
+      });
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
